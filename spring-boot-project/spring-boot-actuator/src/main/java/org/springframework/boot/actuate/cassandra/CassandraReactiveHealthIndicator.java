@@ -15,20 +15,23 @@
  */
 package org.springframework.boot.actuate.cassandra;
 
+import java.util.Objects;
+
 import com.datastax.oss.driver.api.core.ConsistencyLevel;
+import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.SimpleStatement;
 import reactor.core.publisher.Mono;
 
 import org.springframework.boot.actuate.health.AbstractReactiveHealthIndicator;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.ReactiveHealthIndicator;
-import org.springframework.data.cassandra.core.ReactiveCassandraOperations;
 import org.springframework.util.Assert;
 
 /**
  * A {@link ReactiveHealthIndicator} for Cassandra.
  *
  * @author Artsiom Yudovin
+ * @author Alexandre Dutra
  * @since 2.1.0
  */
 public class CassandraReactiveHealthIndicator extends AbstractReactiveHealthIndicator {
@@ -36,22 +39,23 @@ public class CassandraReactiveHealthIndicator extends AbstractReactiveHealthIndi
 	private static final SimpleStatement SELECT = SimpleStatement
 			.newInstance("SELECT release_version FROM system.local").setConsistencyLevel(ConsistencyLevel.LOCAL_ONE);
 
-	private final ReactiveCassandraOperations reactiveCassandraOperations;
+	private final CqlSession session;
 
 	/**
 	 * Create a new {@link CassandraHealthIndicator} instance.
-	 * @param reactiveCassandraOperations the Cassandra operations
+	 * @param session the {@link CqlSession}.
 	 */
-	public CassandraReactiveHealthIndicator(ReactiveCassandraOperations reactiveCassandraOperations) {
+	public CassandraReactiveHealthIndicator(CqlSession session) {
 		super("Cassandra health check failed");
-		Assert.notNull(reactiveCassandraOperations, "ReactiveCassandraOperations must not be null");
-		this.reactiveCassandraOperations = reactiveCassandraOperations;
+		Assert.notNull(session, "session must not be null");
+		this.session = session;
 	}
 
 	@Override
 	protected Mono<Health> doHealthCheck(Health.Builder builder) {
-		return this.reactiveCassandraOperations.getReactiveCqlOperations().queryForObject(SELECT, String.class)
-				.map((version) -> builder.up().withDetail("version", version).build()).single();
+		return Mono.from(this.session.executeReactive(SELECT))
+				.map((row) -> Objects.requireNonNull(row.getString(0), "release_version should never be null"))
+				.map((version) -> builder.up().withDetail("version", version).build());
 	}
 
 }

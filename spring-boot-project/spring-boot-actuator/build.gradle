@@ -14,6 +14,7 @@ dependencies {
 	implementation(project(":spring-boot-project:spring-boot"))
 
 	optional(platform(project(":spring-boot-project:spring-boot-dependencies")))
+	optional("com.datastax.oss:java-driver-core")
 	optional("com.fasterxml.jackson.core:jackson-databind")
 	optional("com.github.ben-manes.caffeine:caffeine")
 	optional("com.hazelcast:hazelcast")
@@ -53,7 +54,6 @@ dependencies {
 	optional("org.springframework:spring-web")
 	optional("org.springframework:spring-webmvc")
 	optional("org.springframework.amqp:spring-rabbit")
-	optional("org.springframework.data:spring-data-cassandra")
 	optional("org.springframework.data:spring-data-couchbase")
 	optional("org.springframework.data:spring-data-ldap")
 	optional("org.springframework.data:spring-data-mongodb")

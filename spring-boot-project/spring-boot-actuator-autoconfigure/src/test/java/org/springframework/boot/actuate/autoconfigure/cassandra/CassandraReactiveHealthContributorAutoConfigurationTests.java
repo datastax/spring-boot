@@ -16,15 +16,14 @@
 
 package org.springframework.boot.actuate.autoconfigure.cassandra;
 
+import com.datastax.oss.driver.api.core.CqlSession;
 import org.junit.jupiter.api.Test;
 
-import org.springframework.boot.actuate.autoconfigure.cassandra.CassandraHealthContributorAutoConfigurationTests.CassandraConfiguration;
 import org.springframework.boot.actuate.autoconfigure.health.HealthContributorAutoConfiguration;
 import org.springframework.boot.actuate.cassandra.CassandraHealthIndicator;
 import org.springframework.boot.actuate.cassandra.CassandraReactiveHealthIndicator;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
-import org.springframework.data.cassandra.core.ReactiveCassandraOperations;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -38,7 +37,7 @@ import static org.mockito.Mockito.mock;
 class CassandraReactiveHealthContributorAutoConfigurationTests {
 
 	private ApplicationContextRunner contextRunner = new ApplicationContextRunner()
-			.withBean(ReactiveCassandraOperations.class, () -> mock(ReactiveCassandraOperations.class))
+			.withBean(CqlSession.class, () -> mock(CqlSession.class))
 			.withConfiguration(AutoConfigurations.of(CassandraReactiveHealthContributorAutoConfiguration.class,
 					HealthContributorAutoConfiguration.class));
 
@@ -50,9 +49,7 @@ class CassandraReactiveHealthContributorAutoConfigurationTests {
 
 	@Test
 	void runWithRegularIndicatorShouldOnlyCreateReactiveIndicator() {
-		this.contextRunner
-				.withConfiguration(AutoConfigurations.of(CassandraConfiguration.class,
-						CassandraHealthContributorAutoConfiguration.class))
+		this.contextRunner.withConfiguration(AutoConfigurations.of(CassandraHealthContributorAutoConfiguration.class))
 				.run((context) -> assertThat(context).hasSingleBean(CassandraReactiveHealthIndicator.class)
 						.hasBean("cassandraHealthContributor").doesNotHaveBean(CassandraHealthIndicator.class));
 	}

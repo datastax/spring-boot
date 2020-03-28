@@ -15,40 +15,46 @@
  */
 package org.springframework.boot.actuate.cassandra;
 
+import com.datastax.dse.driver.api.core.cql.reactive.ReactiveResultSet;
+import com.datastax.dse.driver.api.core.cql.reactive.ReactiveRow;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.DriverTimeoutException;
 import com.datastax.oss.driver.api.core.cql.SimpleStatement;
 import org.junit.jupiter.api.Test;
+import org.mockito.stubbing.Answer;
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.Status;
-import org.springframework.data.cassandra.CassandraInternalException;
-import org.springframework.data.cassandra.core.ReactiveCassandraOperations;
-import org.springframework.data.cassandra.core.cql.ReactiveCqlOperations;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 
 /**
  * Tests for {@link CassandraReactiveHealthIndicator}.
  *
  * @author Artsiom Yudovin
+ * @author Alexandre Dutra
  */
 class CassandraReactiveHealthIndicatorTests {
 
 	@Test
 	void testCassandraIsUp() {
-		ReactiveCqlOperations reactiveCqlOperations = mock(ReactiveCqlOperations.class);
-		given(reactiveCqlOperations.queryForObject(any(SimpleStatement.class), eq(String.class)))
-				.willReturn(Mono.just("6.0.0"));
-		ReactiveCassandraOperations reactiveCassandraOperations = mock(ReactiveCassandraOperations.class);
-		given(reactiveCassandraOperations.getReactiveCqlOperations()).willReturn(reactiveCqlOperations);
+		CqlSession session = mock(CqlSession.class);
+		ReactiveResultSet results = mock(ReactiveResultSet.class);
+		ReactiveRow row = mock(ReactiveRow.class);
+		given(session.executeReactive(any(SimpleStatement.class))).willReturn(results);
+		doAnswer(mockReactiveResultSetBehavior(row)).when(results).subscribe(any());
+		given(row.getString(0)).willReturn("6.0.0");
 
 		CassandraReactiveHealthIndicator cassandraReactiveHealthIndicator = new CassandraReactiveHealthIndicator(
-				reactiveCassandraOperations);
+				session);
 		Mono<Health> health = cassandraReactiveHealthIndicator.health();
 		StepVerifier.create(health).consumeNextWith((h) -> {
 			assertThat(h.getStatus()).isEqualTo(Status.UP);
@@ -59,19 +65,38 @@ class CassandraReactiveHealthIndicatorTests {
 
 	@Test
 	void testCassandraIsDown() {
-		ReactiveCassandraOperations reactiveCassandraOperations = mock(ReactiveCassandraOperations.class);
-		given(reactiveCassandraOperations.getReactiveCqlOperations())
-				.willThrow(new CassandraInternalException("Connection failed"));
+		CqlSession session = mock(CqlSession.class);
+		given(session.executeReactive(any(SimpleStatement.class)))
+				.willThrow(new DriverTimeoutException("Connection timed out (not really)"));
 
 		CassandraReactiveHealthIndicator cassandraReactiveHealthIndicator = new CassandraReactiveHealthIndicator(
-				reactiveCassandraOperations);
+				session);
 		Mono<Health> health = cassandraReactiveHealthIndicator.health();
 		StepVerifier.create(health).consumeNextWith((h) -> {
 			assertThat(h.getStatus()).isEqualTo(Status.DOWN);
 			assertThat(h.getDetails()).containsOnlyKeys("error");
 			assertThat(h.getDetails().get("error"))
-					.isEqualTo(CassandraInternalException.class.getName() + ": Connection failed");
+					.isEqualTo(DriverTimeoutException.class.getName() + ": Connection timed out (not really)");
 		}).verifyComplete();
+	}
+
+	private Answer<Void> mockReactiveResultSetBehavior(ReactiveRow row) {
+		return invocation -> {
+			Subscriber<ReactiveRow> subscriber = invocation.getArgument(0);
+			Subscription s = new Subscription() {
+				@Override
+				public void request(long n) {
+					subscriber.onNext(row);
+					subscriber.onComplete();
+				}
+
+				@Override
+				public void cancel() {
+				}
+			};
+			subscriber.onSubscribe(s);
+			return null;
+		};
 	}
 
 }

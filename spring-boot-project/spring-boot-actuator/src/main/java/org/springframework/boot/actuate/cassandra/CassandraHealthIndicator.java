@@ -17,12 +17,13 @@
 package org.springframework.boot.actuate.cassandra;
 
 import com.datastax.oss.driver.api.core.ConsistencyLevel;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.oss.driver.api.core.cql.SimpleStatement;
 
 import org.springframework.boot.actuate.health.AbstractHealthIndicator;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
-import org.springframework.data.cassandra.core.CassandraOperations;
 import org.springframework.util.Assert;
 
 /**
@@ -38,25 +39,24 @@ public class CassandraHealthIndicator extends AbstractHealthIndicator {
 	private static final SimpleStatement SELECT = SimpleStatement
 			.newInstance("SELECT release_version FROM system.local").setConsistencyLevel(ConsistencyLevel.LOCAL_ONE);
 
-	private CassandraOperations cassandraOperations;
-
-	public CassandraHealthIndicator() {
-		super("Cassandra health check failed");
-	}
+	private final CqlSession session;
 
 	/**
 	 * Create a new {@link CassandraHealthIndicator} instance.
-	 * @param cassandraOperations the Cassandra operations
+	 * @param session the {@link CqlSession}.
 	 */
-	public CassandraHealthIndicator(CassandraOperations cassandraOperations) {
+	public CassandraHealthIndicator(CqlSession session) {
 		super("Cassandra health check failed");
-		Assert.notNull(cassandraOperations, "CassandraOperations must not be null");
-		this.cassandraOperations = cassandraOperations;
+		Assert.notNull(session, "session must not be null");
+		this.session = session;
 	}
 
 	@Override
 	protected void doHealthCheck(Health.Builder builder) throws Exception {
-		String version = this.cassandraOperations.getCqlOperations().queryForObject(SELECT, String.class);
+		Row row = this.session.execute(SELECT).one();
+		Assert.notNull(row, "system.local should always return one row");
+		String version = row.getString(0);
+		Assert.notNull(version, "release_version should never be null");
 		builder.up().withDetail("version", version);
 	}
 

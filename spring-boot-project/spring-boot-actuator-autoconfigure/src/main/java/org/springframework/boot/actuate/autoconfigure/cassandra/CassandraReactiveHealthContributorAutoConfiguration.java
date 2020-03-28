@@ -26,13 +26,12 @@ import org.springframework.boot.actuate.cassandra.CassandraReactiveHealthIndicat
 import org.springframework.boot.actuate.health.ReactiveHealthContributor;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.cassandra.CassandraAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.data.cassandra.CassandraReactiveDataAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.cassandra.core.ReactiveCassandraOperations;
 
 /**
  * {@link EnableAutoConfiguration Auto-configuration} for
@@ -40,21 +39,21 @@ import org.springframework.data.cassandra.core.ReactiveCassandraOperations;
  *
  * @author Artsiom Yudovin
  * @author Stephane Nicoll
+ * @author Alexandre Dutra
  * @since 2.1.0
  */
 @Configuration(proxyBeanMethods = false)
-@ConditionalOnClass({ CqlSession.class, ReactiveCassandraOperations.class, Flux.class })
-@ConditionalOnBean(ReactiveCassandraOperations.class)
+@ConditionalOnClass({ CqlSession.class, Flux.class })
+@ConditionalOnBean(CqlSession.class)
 @ConditionalOnEnabledHealthIndicator("cassandra")
-@AutoConfigureAfter(CassandraReactiveDataAutoConfiguration.class)
-public class CassandraReactiveHealthContributorAutoConfiguration extends
-		CompositeReactiveHealthContributorConfiguration<CassandraReactiveHealthIndicator, ReactiveCassandraOperations> {
+@AutoConfigureAfter(CassandraAutoConfiguration.class)
+public class CassandraReactiveHealthContributorAutoConfiguration
+		extends CompositeReactiveHealthContributorConfiguration<CassandraReactiveHealthIndicator, CqlSession> {
 
 	@Bean
 	@ConditionalOnMissingBean(name = { "cassandraHealthIndicator", "cassandraHealthContributor" })
-	public ReactiveHealthContributor cassandraHealthContributor(
-			Map<String, ReactiveCassandraOperations> reactiveCassandraOperations) {
-		return createContributor(reactiveCassandraOperations);
+	public ReactiveHealthContributor cassandraHealthContributor(Map<String, CqlSession> sessions) {
+		return createContributor(sessions);
 	}
 
 }

@@ -16,16 +16,13 @@
 
 package org.springframework.boot.actuate.autoconfigure.cassandra;
 
+import com.datastax.oss.driver.api.core.CqlSession;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.actuate.autoconfigure.health.HealthContributorAutoConfiguration;
 import org.springframework.boot.actuate.cassandra.CassandraHealthIndicator;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
-import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.data.cassandra.core.CassandraOperations;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -38,8 +35,8 @@ import static org.mockito.Mockito.mock;
 class CassandraHealthContributorAutoConfigurationTests {
 
 	private ApplicationContextRunner contextRunner = new ApplicationContextRunner()
-			.withConfiguration(AutoConfigurations.of(CassandraConfiguration.class,
-					CassandraHealthContributorAutoConfiguration.class, HealthContributorAutoConfiguration.class));
+			.withBean(CqlSession.class, () -> mock(CqlSession.class)).withConfiguration(AutoConfigurations
+					.of(CassandraHealthContributorAutoConfiguration.class, HealthContributorAutoConfiguration.class));
 
 	@Test
 	void runShouldCreateIndicator() {
@@ -50,17 +47,6 @@ class CassandraHealthContributorAutoConfigurationTests {
 	void runWhenDisabledShouldNotCreateIndicator() {
 		this.contextRunner.withPropertyValues("management.health.cassandra.enabled:false")
 				.run((context) -> assertThat(context).doesNotHaveBean(CassandraHealthIndicator.class));
-	}
-
-	@Configuration(proxyBeanMethods = false)
-	@AutoConfigureBefore(CassandraHealthContributorAutoConfiguration.class)
-	static class CassandraConfiguration {
-
-		@Bean
-		CassandraOperations cassandraOperations() {
-			return mock(CassandraOperations.class);
-		}
-
 	}
 
 }

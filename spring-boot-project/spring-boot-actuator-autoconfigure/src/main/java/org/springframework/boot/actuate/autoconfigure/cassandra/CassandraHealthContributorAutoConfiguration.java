@@ -30,10 +30,8 @@ import org.springframework.boot.autoconfigure.cassandra.CassandraAutoConfigurati
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.data.cassandra.CassandraDataAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.cassandra.core.CassandraOperations;
 
 /**
  * {@link EnableAutoConfiguration Auto-configuration} for
@@ -41,21 +39,21 @@ import org.springframework.data.cassandra.core.CassandraOperations;
  *
  * @author Julien Dubois
  * @author Stephane Nicoll
+ * @author Alexandre Dutra
  * @since 2.1.0
  */
 @Configuration(proxyBeanMethods = false)
-@ConditionalOnClass({ CqlSession.class, CassandraOperations.class })
-@ConditionalOnBean(CassandraOperations.class)
+@ConditionalOnClass(CqlSession.class)
+@ConditionalOnBean(CqlSession.class)
 @ConditionalOnEnabledHealthIndicator("cassandra")
-@AutoConfigureAfter({ CassandraAutoConfiguration.class, CassandraDataAutoConfiguration.class,
-		CassandraReactiveHealthContributorAutoConfiguration.class })
+@AutoConfigureAfter({ CassandraAutoConfiguration.class, CassandraReactiveHealthContributorAutoConfiguration.class })
 public class CassandraHealthContributorAutoConfiguration
-		extends CompositeHealthContributorConfiguration<CassandraHealthIndicator, CassandraOperations> {
+		extends CompositeHealthContributorConfiguration<CassandraHealthIndicator, CqlSession> {
 
 	@Bean
 	@ConditionalOnMissingBean(name = { "cassandraHealthIndicator", "cassandraHealthContributor" })
-	public HealthContributor cassandraHealthContributor(Map<String, CassandraOperations> cassandraOperations) {
-		return createContributor(cassandraOperations);
+	public HealthContributor cassandraHealthContributor(Map<String, CqlSession> sessions) {
+		return createContributor(sessions);
 	}
 
 }
