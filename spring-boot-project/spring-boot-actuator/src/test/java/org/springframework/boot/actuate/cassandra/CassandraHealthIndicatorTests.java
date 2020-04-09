@@ -64,13 +64,12 @@ class CassandraHealthIndicatorTests {
 	@Test
 	void healthWithCassandraDown() {
 		CqlSession session = mock(CqlSession.class);
-		given(session.execute(any(SimpleStatement.class)))
-				.willThrow(new DriverTimeoutException("Connection timed out (not really)"));
+		given(session.execute(any(SimpleStatement.class))).willThrow(new DriverTimeoutException("Test Exception"));
 		CassandraHealthIndicator healthIndicator = new CassandraHealthIndicator(session);
 		Health health = healthIndicator.health();
 		assertThat(health.getStatus()).isEqualTo(Status.DOWN);
 		assertThat(health.getDetails().get("error"))
-				.isEqualTo(DriverTimeoutException.class.getName() + ": Connection timed out (not really)");
+				.isEqualTo(DriverTimeoutException.class.getName() + ": Test Exception");
 	}
 
 }
