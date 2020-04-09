@@ -16,8 +16,6 @@
 
 package org.springframework.boot.autoconfigure.data.cassandra;
 
-import reactor.core.publisher.Flux;
-
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -41,7 +39,7 @@ import org.springframework.data.cassandra.repository.support.ReactiveCassandraRe
  * @see EnableReactiveCassandraRepositories
  */
 @Configuration(proxyBeanMethods = false)
-@ConditionalOnClass({ ReactiveSession.class, ReactiveCassandraRepository.class, Flux.class })
+@ConditionalOnClass({ ReactiveSession.class, ReactiveCassandraRepository.class })
 @ConditionalOnRepositoryType(store = "cassandra", type = RepositoryType.REACTIVE)
 @ConditionalOnMissingBean(ReactiveCassandraRepositoryFactoryBean.class)
 @Import(CassandraReactiveRepositoriesRegistrar.class)
