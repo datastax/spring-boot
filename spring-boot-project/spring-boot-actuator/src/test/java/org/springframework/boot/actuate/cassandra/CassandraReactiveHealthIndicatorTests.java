@@ -32,9 +32,9 @@ import org.springframework.boot.actuate.health.Status;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.doAnswer;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
+import static org.mockito.BDDMockito.mock;
 
 /**
  * Tests for {@link CassandraReactiveHealthIndicator}.
@@ -81,7 +81,7 @@ class CassandraReactiveHealthIndicatorTests {
 	}
 
 	private Answer<Void> mockReactiveResultSetBehavior(ReactiveRow row) {
-		return invocation -> {
+		return (invocation) -> {
 			Subscriber<ReactiveRow> subscriber = invocation.getArgument(0);
 			Subscription s = new Subscription() {
 				@Override
