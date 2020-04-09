@@ -15,8 +15,6 @@
  */
 package org.springframework.boot.actuate.cassandra;
 
-import java.util.Objects;
-
 import com.datastax.oss.driver.api.core.ConsistencyLevel;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.SimpleStatement;
@@ -54,8 +52,7 @@ public class CassandraReactiveHealthIndicator extends AbstractReactiveHealthIndi
 	@Override
 	protected Mono<Health> doHealthCheck(Health.Builder builder) {
 		return Mono.from(this.session.executeReactive(SELECT))
-				.map((row) -> Objects.requireNonNull(row.getString(0), "release_version should never be null"))
-				.map((version) -> builder.up().withDetail("version", version).build());
+				.map((row) -> builder.up().withDetail("version", row.getString(0)).build());
 	}
 
 }
