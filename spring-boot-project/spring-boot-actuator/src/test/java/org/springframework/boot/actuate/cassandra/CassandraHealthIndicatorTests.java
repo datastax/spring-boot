@@ -53,6 +53,7 @@ class CassandraHealthIndicatorTests {
 		Row row = mock(Row.class);
 		given(session.execute(any(SimpleStatement.class))).willReturn(resultSet);
 		given(resultSet.one()).willReturn(row);
+		given(row.isNull(0)).willReturn(false);
 		given(row.getString(0)).willReturn("1.0.0");
 		CassandraHealthIndicator healthIndicator = new CassandraHealthIndicator(session);
 		Health health = healthIndicator.health();

@@ -54,10 +54,10 @@ public class CassandraHealthIndicator extends AbstractHealthIndicator {
 	@Override
 	protected void doHealthCheck(Health.Builder builder) throws Exception {
 		Row row = this.session.execute(SELECT).one();
-		Assert.notNull(row, "system.local should always return one row");
-		String version = row.getString(0);
-		Assert.notNull(version, "release_version should never be null");
-		builder.up().withDetail("version", version);
+		builder.up();
+		if (row != null && !row.isNull(0)) {
+			builder.withDetail("version", row.getString(0));
+		}
 	}
 
 }
