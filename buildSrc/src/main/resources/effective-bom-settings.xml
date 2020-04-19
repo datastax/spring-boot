@@ -18,6 +18,10 @@
 					<id>spring-milestone</id>
 					<url>https://repo.spring.io/milestone</url>
 				</repository>
+				<repository>
+					<id>datastax</id>
+					<url>https://repo.sjc.dsinternal.org/artifactory/datastax-public-releases-local</url>
+				</repository>
 			</repositories>
 		</profile>
 	</profiles>
